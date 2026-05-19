@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Data
+data/uploads/*
+data/results/*
+!data/uploads/.gitkeep
+!data/results/.gitkeep
+*.ts
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
+# Logs
+logs/*.log
+*.log
+
+# Results
+api_results/
+analysis_results/
+diagnostic_*/
+visualizations/
+
+# Models (large files)
+*.ckpt
+*.pth
+*.pt
+*.h5
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Old files
+=*
