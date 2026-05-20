@@ -1,0 +1,653 @@
+==========================================================================================
+  STREAM PIXELATION DETECTION — ANALYSIS REPORT
+  Generated : 2026-05-21 03:36
+  Algorithm : MVAD (RMViT) + FrozenBlock + MBRatio + BRISQUE hybrid
+  Decoder   : PyAV (libav/ffmpeg) — full frame accuracy
+==========================================================================================
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  FILE    : glitch_65177.ts
+  Duration: 3.16s  |  79 frames  |  25 fps  |  3160ms
+──────────────────────────────────────────────────────────────────────────────────────────
+
+  ┌─ SUMMARY ──────────────────────────────────────────────────────────────────┐
+  │  Total frames analyzed : 79                                                │
+  │  Glitched frames       : 74         (93.7%)                              │
+  │  Clean frames          : 5          (6.3%)                              │
+  │  Glitch ranges         : 2                                                 │
+  │  Confidence (avg/max)  : 0.947 / 1.000                              │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  TIMELINE  (█ = glitch, . = clean, 79 frames → 3.16s)
+  0s                            1.6s                           3.2s
+  |████████....████████████████████████████████████████████████|
+
+  GLITCH RANGES:
+  #      Start Frame   End Frame      Start TC        End TC    Duration   Frames   Avg Conf  Type
+  ────  ────────────  ──────────  ────────────  ────────────  ──────────  ───────  ─────────  ────────────────
+  1                0          10  00:00:00.000  00:00:00.400      0.400s       11      1.000  frozen_blocks
+  2               16          78  00:00:00.640  00:00:03.120      2.480s       63      0.937  frozen_blocks
+
+  PER-FRAME DETAIL:
+   Frame      Timecode    Status    Conf  Type              Severity  Decision Maker
+  ──────  ────────────  ────────  ──────  ────────────────  ────────  ────────────────────────
+       0  00:00:00.000  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       1  00:00:00.040  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       2  00:00:00.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       3  00:00:00.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       4  00:00:00.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       5  00:00:00.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       6  00:00:00.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       7  00:00:00.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       8  00:00:00.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       9  00:00:00.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      10  00:00:00.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      11  00:00:00.440  🟢 clean    0.000  scene_cut         none      
+      12  00:00:00.480  🟢 clean    0.000  scene_cut         none      
+      13  00:00:00.520  🟢 clean    0.000  scene_cut         none      
+      14  00:00:00.560  🟢 clean    0.000  scene_cut         none      
+      15  00:00:00.600  🟢 clean    0.000  scene_cut         none      
+      16  00:00:00.640  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      17  00:00:00.680  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      18  00:00:00.720  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      19  00:00:00.760  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      20  00:00:00.800  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      21  00:00:00.840  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      22  00:00:00.880  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      23  00:00:00.920  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      24  00:00:00.960  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      25  00:00:01.000  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      26  00:00:01.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      27  00:00:01.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      28  00:00:01.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      29  00:00:01.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      30  00:00:01.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      31  00:00:01.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      32  00:00:01.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      33  00:00:01.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      34  00:00:01.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      35  00:00:01.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      36  00:00:01.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      37  00:00:01.480  🔴 GLITCH   0.504  frozen_blocks     high      FrozenBlock_definitive
+      38  00:00:01.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      39  00:00:01.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      40  00:00:01.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      41  00:00:01.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      42  00:00:01.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      43  00:00:01.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      44  00:00:01.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      45  00:00:01.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      46  00:00:01.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      47  00:00:01.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      48  00:00:01.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      49  00:00:01.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      50  00:00:02.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      51  00:00:02.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      52  00:00:02.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      53  00:00:02.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      54  00:00:02.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      55  00:00:02.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      56  00:00:02.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      57  00:00:02.280  🔴 GLITCH   0.629  frozen_blocks     high      FrozenBlock_definitive
+      58  00:00:02.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      59  00:00:02.360  🔴 GLITCH   0.590  frozen_blocks     high      FrozenBlock_definitive
+      60  00:00:02.400  🔴 GLITCH   0.541  frozen_blocks     high      FrozenBlock_definitive
+      61  00:00:02.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      62  00:00:02.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      63  00:00:02.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      64  00:00:02.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      65  00:00:02.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      66  00:00:02.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      67  00:00:02.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      68  00:00:02.720  🔴 GLITCH   0.693  frozen_blocks     high      FrozenBlock_definitive
+      69  00:00:02.760  🔴 GLITCH   0.573  frozen_blocks     high      FrozenBlock_definitive
+      70  00:00:02.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      71  00:00:02.840  🔴 GLITCH   0.622  frozen_blocks     high      FrozenBlock_definitive
+      72  00:00:02.880  🔴 GLITCH   0.545  frozen_blocks     high      FrozenBlock_definitive
+      73  00:00:02.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      74  00:00:02.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      75  00:00:03.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      76  00:00:03.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      77  00:00:03.080  🔴 GLITCH   0.699  frozen_blocks     high      FrozenBlock_definitive
+      78  00:00:03.120  🔴 GLITCH   0.649  frozen_blocks     high      FrozenBlock_definitive
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  FILE    : glitch_65178.ts
+  Duration: 4.24s  |  106 frames  |  25 fps  |  4240ms
+──────────────────────────────────────────────────────────────────────────────────────────
+
+  ┌─ SUMMARY ──────────────────────────────────────────────────────────────────┐
+  │  Total frames analyzed : 106                                               │
+  │  Glitched frames       : 103        (97.2%)                              │
+  │  Clean frames          : 3          (2.8%)                              │
+  │  Glitch ranges         : 1                                                 │
+  │  Confidence (avg/max)  : 0.989 / 1.000                              │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  TIMELINE  (█ = glitch, . = clean, 106 frames → 4.24s)
+  0s                            2.1s                           4.2s
+  |████████████████████████████████████████████████████████████|
+
+  GLITCH RANGES:
+  #      Start Frame   End Frame      Start TC        End TC    Duration   Frames   Avg Conf  Type
+  ────  ────────────  ──────────  ────────────  ────────────  ──────────  ───────  ─────────  ────────────────
+  1                0         105  00:00:00.000  00:00:04.200      4.200s      106      0.989  frozen_blocks
+
+  PER-FRAME DETAIL:
+   Frame      Timecode    Status    Conf  Type              Severity  Decision Maker
+  ──────  ────────────  ────────  ──────  ────────────────  ────────  ────────────────────────
+       0  00:00:00.000  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       1  00:00:00.040  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       2  00:00:00.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       3  00:00:00.120  🔴 GLITCH   0.751  frozen_blocks     high      FrozenBlock_definitive
+       4  00:00:00.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       5  00:00:00.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       6  00:00:00.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       7  00:00:00.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       8  00:00:00.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       9  00:00:00.360  🔴 GLITCH   0.608  frozen_blocks     high      FrozenBlock_definitive
+      10  00:00:00.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      11  00:00:00.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      12  00:00:00.480  🔴 GLITCH   0.518  frozen_blocks     high      FrozenBlock_definitive
+      13  00:00:00.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      14  00:00:00.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      15  00:00:00.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      16  00:00:00.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      17  00:00:00.680  🟢 clean    0.000  scene_cut         none      
+      18  00:00:00.720  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      19  00:00:00.760  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      20  00:00:00.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      21  00:00:00.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      22  00:00:00.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      23  00:00:00.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      24  00:00:00.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      25  00:00:01.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      26  00:00:01.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      27  00:00:01.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      28  00:00:01.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      29  00:00:01.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      30  00:00:01.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      31  00:00:01.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      32  00:00:01.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      33  00:00:01.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      34  00:00:01.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      35  00:00:01.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      36  00:00:01.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      37  00:00:01.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      38  00:00:01.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      39  00:00:01.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      40  00:00:01.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      41  00:00:01.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      42  00:00:01.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      43  00:00:01.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      44  00:00:01.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      45  00:00:01.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      46  00:00:01.840  🟢 clean    0.000  scene_cut         none      
+      47  00:00:01.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      48  00:00:01.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      49  00:00:01.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      50  00:00:02.000  🟢 clean    0.000  scene_cut         none      
+      51  00:00:02.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      52  00:00:02.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      53  00:00:02.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      54  00:00:02.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      55  00:00:02.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      56  00:00:02.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      57  00:00:02.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      58  00:00:02.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      59  00:00:02.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      60  00:00:02.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      61  00:00:02.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      62  00:00:02.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      63  00:00:02.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      64  00:00:02.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      65  00:00:02.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      66  00:00:02.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      67  00:00:02.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      68  00:00:02.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      69  00:00:02.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      70  00:00:02.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      71  00:00:02.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      72  00:00:02.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      73  00:00:02.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      74  00:00:02.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      75  00:00:03.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      76  00:00:03.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      77  00:00:03.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      78  00:00:03.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      79  00:00:03.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      80  00:00:03.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      81  00:00:03.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      82  00:00:03.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      83  00:00:03.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      84  00:00:03.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      85  00:00:03.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      86  00:00:03.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      87  00:00:03.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      88  00:00:03.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      89  00:00:03.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      90  00:00:03.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      91  00:00:03.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      92  00:00:03.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      93  00:00:03.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      94  00:00:03.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      95  00:00:03.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      96  00:00:03.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      97  00:00:03.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      98  00:00:03.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      99  00:00:03.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+     100  00:00:04.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+     101  00:00:04.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+     102  00:00:04.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+     103  00:00:04.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+     104  00:00:04.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+     105  00:00:04.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  FILE    : glitch_67890.ts
+  Duration: 4.00s  |  100 frames  |  25 fps  |  4000ms
+──────────────────────────────────────────────────────────────────────────────────────────
+
+  ┌─ SUMMARY ──────────────────────────────────────────────────────────────────┐
+  │  Total frames analyzed : 100                                               │
+  │  Glitched frames       : 97         (97.0%)                              │
+  │  Clean frames          : 3          (3.0%)                              │
+  │  Glitch ranges         : 1                                                 │
+  │  Confidence (avg/max)  : 0.804 / 1.000                              │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  TIMELINE  (█ = glitch, . = clean, 100 frames → 4.00s)
+  0s                            2.0s                           4.0s
+  |█████████████████████████████.██████████████████████████████|
+
+  GLITCH RANGES:
+  #      Start Frame   End Frame      Start TC        End TC    Duration   Frames   Avg Conf  Type
+  ────  ────────────  ──────────  ────────────  ────────────  ──────────  ───────  ─────────  ────────────────
+  1                0          99  00:00:00.000  00:00:03.960      3.960s      100      0.804  frozen_blocks
+
+  PER-FRAME DETAIL:
+   Frame      Timecode    Status    Conf  Type              Severity  Decision Maker
+  ──────  ────────────  ────────  ──────  ────────────────  ────────  ────────────────────────
+       0  00:00:00.000  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       1  00:00:00.040  🔴 GLITCH   0.553  none              none      FrozenBlock_definitive
+       2  00:00:00.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       3  00:00:00.120  🔴 GLITCH   0.547  frozen_blocks     high      FrozenBlock_definitive
+       4  00:00:00.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       5  00:00:00.200  🔴 GLITCH   0.518  frozen_blocks     high      FrozenBlock_definitive
+       6  00:00:00.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       7  00:00:00.280  🔴 GLITCH   0.503  frozen_blocks     high      FrozenBlock_definitive
+       8  00:00:00.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       9  00:00:00.360  🔴 GLITCH   0.523  frozen_blocks     high      FrozenBlock_definitive
+      10  00:00:00.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      11  00:00:00.440  🔴 GLITCH   0.520  frozen_blocks     high      FrozenBlock_definitive
+      12  00:00:00.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      13  00:00:00.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      14  00:00:00.560  🔴 GLITCH   0.527  frozen_blocks     high      FrozenBlock_definitive
+      15  00:00:00.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      16  00:00:00.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      17  00:00:00.680  🔴 GLITCH   0.537  frozen_blocks     high      FrozenBlock_definitive
+      18  00:00:00.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      19  00:00:00.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      20  00:00:00.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      21  00:00:00.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      22  00:00:00.880  🟢 clean    0.000  scene_cut         none      
+      23  00:00:00.920  🔴 GLITCH   0.627  none              none      FrozenBlock_definitive
+      24  00:00:00.960  🔴 GLITCH   0.517  none              none      FrozenBlock_definitive
+      25  00:00:01.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      26  00:00:01.040  🔴 GLITCH   0.620  frozen_blocks     high      FrozenBlock_definitive
+      27  00:00:01.080  🔴 GLITCH   0.586  frozen_blocks     high      FrozenBlock_definitive
+      28  00:00:01.120  🔴 GLITCH   0.573  frozen_blocks     high      FrozenBlock_definitive
+      29  00:00:01.160  🔴 GLITCH   0.541  frozen_blocks     high      FrozenBlock_definitive
+      30  00:00:01.200  🔴 GLITCH   0.527  frozen_blocks     high      FrozenBlock_definitive
+      31  00:00:01.240  🔴 GLITCH   0.526  frozen_blocks     medium    FrozenBlock_definitive
+      32  00:00:01.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      33  00:00:01.320  🔴 GLITCH   0.623  frozen_blocks     medium    FrozenBlock_definitive
+      34  00:00:01.360  🔴 GLITCH   0.600  frozen_blocks     medium    FrozenBlock_definitive
+      35  00:00:01.400  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      36  00:00:01.440  🔴 GLITCH   0.589  frozen_blocks     medium    FrozenBlock_definitive
+      37  00:00:01.480  🔴 GLITCH   0.528  frozen_blocks     medium    FrozenBlock_definitive
+      38  00:00:01.520  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      39  00:00:01.560  🔴 GLITCH   0.652  frozen_blocks     medium    FrozenBlock_definitive
+      40  00:00:01.600  🔴 GLITCH   0.614  frozen_blocks     medium    FrozenBlock_definitive
+      41  00:00:01.640  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      42  00:00:01.680  🔴 GLITCH   0.633  frozen_blocks     medium    FrozenBlock_definitive
+      43  00:00:01.720  🔴 GLITCH   0.586  frozen_blocks     medium    FrozenBlock_definitive
+      44  00:00:01.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      45  00:00:01.800  🔴 GLITCH   0.603  frozen_blocks     high      FrozenBlock_definitive
+      46  00:00:01.840  🔴 GLITCH   0.517  frozen_blocks     high      FrozenBlock_definitive
+      47  00:00:01.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      48  00:00:01.920  🔴 GLITCH   0.542  frozen_blocks     high      FrozenBlock_definitive
+      49  00:00:01.960  🟢 clean    0.000  scene_cut         none      
+      50  00:00:02.000  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      51  00:00:02.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      52  00:00:02.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      53  00:00:02.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      54  00:00:02.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      55  00:00:02.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      56  00:00:02.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      57  00:00:02.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      58  00:00:02.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      59  00:00:02.360  🔴 GLITCH   0.500  frozen_blocks     high      FrozenBlock_definitive
+      60  00:00:02.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      61  00:00:02.440  🔴 GLITCH   0.526  frozen_blocks     high      FrozenBlock_definitive
+      62  00:00:02.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      63  00:00:02.520  🔴 GLITCH   0.501  frozen_blocks     high      FrozenBlock_definitive
+      64  00:00:02.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      65  00:00:02.600  🔴 GLITCH   0.544  frozen_blocks     high      FrozenBlock_definitive
+      66  00:00:02.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      67  00:00:02.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      68  00:00:02.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      69  00:00:02.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      70  00:00:02.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      71  00:00:02.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      72  00:00:02.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      73  00:00:02.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      74  00:00:02.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      75  00:00:03.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      76  00:00:03.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      77  00:00:03.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      78  00:00:03.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      79  00:00:03.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      80  00:00:03.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      81  00:00:03.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      82  00:00:03.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      83  00:00:03.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      84  00:00:03.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      85  00:00:03.400  🟢 clean    0.000  scene_cut         none      
+      86  00:00:03.440  🔴 GLITCH   0.667  frozen_blocks     high      FrozenBlock_definitive
+      87  00:00:03.480  🔴 GLITCH   0.650  frozen_blocks     high      FrozenBlock_definitive
+      88  00:00:03.520  🔴 GLITCH   0.603  frozen_blocks     high      FrozenBlock_definitive
+      89  00:00:03.560  🔴 GLITCH   0.586  frozen_blocks     high      FrozenBlock_definitive
+      90  00:00:03.600  🔴 GLITCH   0.583  frozen_blocks     high      FrozenBlock_definitive
+      91  00:00:03.640  🔴 GLITCH   0.505  frozen_blocks     high      FrozenBlock_definitive
+      92  00:00:03.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      93  00:00:03.720  🔴 GLITCH   0.676  frozen_blocks     high      FrozenBlock_definitive
+      94  00:00:03.760  🔴 GLITCH   0.614  frozen_blocks     high      FrozenBlock_definitive
+      95  00:00:03.800  🔴 GLITCH   0.604  frozen_blocks     medium    FrozenBlock_definitive
+      96  00:00:03.840  🔴 GLITCH   0.588  frozen_blocks     medium    FrozenBlock_definitive
+      97  00:00:03.880  🔴 GLITCH   0.530  frozen_blocks     medium    FrozenBlock_definitive
+      98  00:00:03.920  🔴 GLITCH   0.523  frozen_blocks     medium    FrozenBlock_definitive
+      99  00:00:03.960  🔴 GLITCH   0.513  frozen_blocks     medium    FrozenBlock_definitive
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  FILE    : media-u2i5e5nyz_b2628000_64969.ts
+  Duration: 4.00s  |  100 frames  |  25 fps  |  4000ms
+──────────────────────────────────────────────────────────────────────────────────────────
+
+  ┌─ SUMMARY ──────────────────────────────────────────────────────────────────┐
+  │  Total frames analyzed : 100                                               │
+  │  Glitched frames       : 96         (96.0%)                              │
+  │  Clean frames          : 4          (4.0%)                              │
+  │  Glitch ranges         : 1                                                 │
+  │  Confidence (avg/max)  : 0.848 / 1.000                              │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  TIMELINE  (█ = glitch, . = clean, 100 frames → 4.00s)
+  0s                            2.0s                           4.0s
+  |████████████████████████████████████████████████████████████|
+
+  GLITCH RANGES:
+  #      Start Frame   End Frame      Start TC        End TC    Duration   Frames   Avg Conf  Type
+  ────  ────────────  ──────────  ────────────  ────────────  ──────────  ───────  ─────────  ────────────────
+  1                0          99  00:00:00.000  00:00:03.960      3.960s      100      0.848  frozen_blocks
+
+  PER-FRAME DETAIL:
+   Frame      Timecode    Status    Conf  Type              Severity  Decision Maker
+  ──────  ────────────  ────────  ──────  ────────────────  ────────  ────────────────────────
+       0  00:00:00.000  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       1  00:00:00.040  🔴 GLITCH   0.958  none              none      FrozenBlock_definitive
+       2  00:00:00.080  🔴 GLITCH   0.889  frozen_blocks     high      FrozenBlock_definitive
+       3  00:00:00.120  🟢 clean    0.000  scene_cut         none      
+       4  00:00:00.160  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       5  00:00:00.200  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       6  00:00:00.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       7  00:00:00.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       8  00:00:00.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       9  00:00:00.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      10  00:00:00.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      11  00:00:00.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      12  00:00:00.480  🔴 GLITCH   0.604  frozen_blocks     high      FrozenBlock_definitive
+      13  00:00:00.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      14  00:00:00.560  🔴 GLITCH   0.626  frozen_blocks     high      FrozenBlock_definitive
+      15  00:00:00.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      16  00:00:00.640  🔴 GLITCH   0.605  frozen_blocks     high      FrozenBlock_definitive
+      17  00:00:00.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      18  00:00:00.720  🔴 GLITCH   0.647  frozen_blocks     high      FrozenBlock_definitive
+      19  00:00:00.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      20  00:00:00.800  🔴 GLITCH   0.624  frozen_blocks     high      FrozenBlock_definitive
+      21  00:00:00.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      22  00:00:00.880  🔴 GLITCH   0.582  frozen_blocks     high      FrozenBlock_definitive
+      23  00:00:00.920  🟢 clean    0.000  scene_cut         none      
+      24  00:00:00.960  🔴 GLITCH   0.862  none              none      FrozenBlock_definitive
+      25  00:00:01.000  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      26  00:00:01.040  🟢 clean    0.000  scene_cut         none      
+      27  00:00:01.080  🔴 GLITCH   0.642  none              none      FrozenBlock_definitive
+      28  00:00:01.120  🔴 GLITCH   0.617  none              none      FrozenBlock_definitive
+      29  00:00:01.160  🔴 GLITCH   0.562  frozen_blocks     medium    FrozenBlock_definitive
+      30  00:00:01.200  🔴 GLITCH   0.537  frozen_blocks     medium    FrozenBlock_definitive
+      31  00:00:01.240  🔴 GLITCH   0.526  frozen_blocks     medium    FrozenBlock_definitive
+      32  00:00:01.280  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      33  00:00:01.320  🔴 GLITCH   0.929  frozen_blocks     medium    FrozenBlock_definitive
+      34  00:00:01.360  🔴 GLITCH   0.897  frozen_blocks     medium    FrozenBlock_definitive
+      35  00:00:01.400  🔴 GLITCH   0.759  frozen_blocks     medium    FrozenBlock_definitive
+      36  00:00:01.440  🔴 GLITCH   0.726  frozen_blocks     medium    FrozenBlock_definitive
+      37  00:00:01.480  🔴 GLITCH   0.706  frozen_blocks     medium    FrozenBlock_definitive
+      38  00:00:01.520  🔴 GLITCH   0.577  frozen_blocks     medium    FrozenBlock_definitive
+      39  00:00:01.560  🔴 GLITCH   0.552  frozen_blocks     medium    FrozenBlock_definitive
+      40  00:00:01.600  🔴 GLITCH   0.539  frozen_blocks     medium    FrozenBlock_definitive
+      41  00:00:01.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      42  00:00:01.680  🔴 GLITCH   0.879  frozen_blocks     high      FrozenBlock_definitive
+      43  00:00:01.720  🔴 GLITCH   0.829  frozen_blocks     high      FrozenBlock_definitive
+      44  00:00:01.760  🔴 GLITCH   0.719  frozen_blocks     high      FrozenBlock_definitive
+      45  00:00:01.800  🔴 GLITCH   0.684  frozen_blocks     high      FrozenBlock_definitive
+      46  00:00:01.840  🔴 GLITCH   0.666  frozen_blocks     high      FrozenBlock_definitive
+      47  00:00:01.880  🔴 GLITCH   0.523  frozen_blocks     high      FrozenBlock_definitive
+      48  00:00:01.920  🔴 GLITCH   0.501  frozen_blocks     high      FrozenBlock_definitive
+      49  00:00:01.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      50  00:00:02.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      51  00:00:02.040  🔴 GLITCH   0.898  frozen_blocks     high      FrozenBlock_definitive
+      52  00:00:02.080  🟢 clean    0.000  scene_cut         none      
+      53  00:00:02.120  🔴 GLITCH   0.858  frozen_blocks     high      FrozenBlock_definitive
+      54  00:00:02.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      55  00:00:02.200  🔴 GLITCH   0.744  frozen_blocks     high      FrozenBlock_definitive
+      56  00:00:02.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      57  00:00:02.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      58  00:00:02.320  🔴 GLITCH   0.662  frozen_blocks     high      FrozenBlock_definitive
+      59  00:00:02.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      60  00:00:02.400  🔴 GLITCH   0.692  frozen_blocks     high      FrozenBlock_definitive
+      61  00:00:02.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      62  00:00:02.480  🔴 GLITCH   0.574  frozen_blocks     high      FrozenBlock_definitive
+      63  00:00:02.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      64  00:00:02.560  🔴 GLITCH   0.511  frozen_blocks     high      FrozenBlock_definitive
+      65  00:00:02.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      66  00:00:02.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      67  00:00:02.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      68  00:00:02.720  🔴 GLITCH   0.863  frozen_blocks     high      FrozenBlock_definitive
+      69  00:00:02.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      70  00:00:02.800  🔴 GLITCH   0.723  frozen_blocks     high      FrozenBlock_definitive
+      71  00:00:02.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      72  00:00:02.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      73  00:00:02.920  🔴 GLITCH   0.691  frozen_blocks     high      FrozenBlock_definitive
+      74  00:00:02.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      75  00:00:03.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      76  00:00:03.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      77  00:00:03.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      78  00:00:03.120  🔴 GLITCH   0.720  frozen_blocks     high      FrozenBlock_definitive
+      79  00:00:03.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      80  00:00:03.200  🔴 GLITCH   0.715  frozen_blocks     high      FrozenBlock_definitive
+      81  00:00:03.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      82  00:00:03.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      83  00:00:03.320  🔴 GLITCH   0.654  frozen_blocks     high      FrozenBlock_definitive
+      84  00:00:03.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      85  00:00:03.400  🔴 GLITCH   0.726  frozen_blocks     high      FrozenBlock_definitive
+      86  00:00:03.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      87  00:00:03.480  🔴 GLITCH   0.517  frozen_blocks     high      FrozenBlock_definitive
+      88  00:00:03.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      89  00:00:03.560  🔴 GLITCH   0.567  frozen_blocks     high      FrozenBlock_definitive
+      90  00:00:03.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      91  00:00:03.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      92  00:00:03.680  🔴 GLITCH   0.503  frozen_blocks     high      FrozenBlock_definitive
+      93  00:00:03.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      94  00:00:03.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      95  00:00:03.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      96  00:00:03.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      97  00:00:03.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      98  00:00:03.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      99  00:00:03.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  FILE    : media-u2i5e5nyz_b2628000_64970.ts
+  Duration: 4.00s  |  100 frames  |  25 fps  |  4000ms
+──────────────────────────────────────────────────────────────────────────────────────────
+
+  ┌─ SUMMARY ──────────────────────────────────────────────────────────────────┐
+  │  Total frames analyzed : 100                                               │
+  │  Glitched frames       : 79         (79.0%)                              │
+  │  Clean frames          : 21         (21.0%)                              │
+  │  Glitch ranges         : 4                                                 │
+  │  Confidence (avg/max)  : 1.000 / 1.000                              │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  TIMELINE  (█ = glitch, . = clean, 100 frames → 4.00s)
+  0s                            2.0s                           4.0s
+  |████████████████████████████████..███...███...██████████████|
+
+  GLITCH RANGES:
+  #      Start Frame   End Frame      Start TC        End TC    Duration   Frames   Avg Conf  Type
+  ────  ────────────  ──────────  ────────────  ────────────  ──────────  ───────  ─────────  ────────────────
+  1                0          53  00:00:00.000  00:00:02.120      2.120s       54      1.000  frozen_blocks
+  2               58          61  00:00:02.320  00:00:02.440      0.120s        4      1.000  frozen_blocks
+  3               68          71  00:00:02.720  00:00:02.840      0.120s        4      1.000  frozen_blocks
+  4               77          99  00:00:03.080  00:00:03.960      0.880s       23      1.000  frozen_blocks
+
+  PER-FRAME DETAIL:
+   Frame      Timecode    Status    Conf  Type              Severity  Decision Maker
+  ──────  ────────────  ────────  ──────  ────────────────  ────────  ────────────────────────
+       0  00:00:00.000  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       1  00:00:00.040  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+       2  00:00:00.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       3  00:00:00.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       4  00:00:00.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       5  00:00:00.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       6  00:00:00.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       7  00:00:00.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       8  00:00:00.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+       9  00:00:00.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      10  00:00:00.400  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      11  00:00:00.440  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      12  00:00:00.480  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      13  00:00:00.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      14  00:00:00.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      15  00:00:00.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      16  00:00:00.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      17  00:00:00.680  🟢 clean    0.000  scene_cut         none      
+      18  00:00:00.720  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      19  00:00:00.760  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      20  00:00:00.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      21  00:00:00.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      22  00:00:00.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      23  00:00:00.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      24  00:00:00.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      25  00:00:01.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      26  00:00:01.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      27  00:00:01.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      28  00:00:01.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      29  00:00:01.160  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      30  00:00:01.200  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      31  00:00:01.240  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      32  00:00:01.280  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      33  00:00:01.320  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      34  00:00:01.360  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      35  00:00:01.400  🟢 clean    0.000  scene_cut         none      
+      36  00:00:01.440  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      37  00:00:01.480  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      38  00:00:01.520  🟢 clean    0.000  scene_cut         none      
+      39  00:00:01.560  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      40  00:00:01.600  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      41  00:00:01.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      42  00:00:01.680  🟢 clean    0.000  scene_cut         none      
+      43  00:00:01.720  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      44  00:00:01.760  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      45  00:00:01.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      46  00:00:01.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      47  00:00:01.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      48  00:00:01.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      49  00:00:01.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      50  00:00:02.000  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      51  00:00:02.040  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      52  00:00:02.080  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      53  00:00:02.120  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      54  00:00:02.160  🟢 clean    0.000  scene_cut         none      
+      55  00:00:02.200  🟢 clean    0.000  scene_cut         none      
+      56  00:00:02.240  🟢 clean    0.000  scene_cut         none      
+      57  00:00:02.280  🟢 clean    0.000  scene_cut         none      
+      58  00:00:02.320  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      59  00:00:02.360  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      60  00:00:02.400  🟢 clean    0.000  scene_cut         none      
+      61  00:00:02.440  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      62  00:00:02.480  🟢 clean    0.000  scene_cut         none      
+      63  00:00:02.520  🟢 clean    0.000  scene_cut         none      
+      64  00:00:02.560  🟢 clean    0.000  scene_cut         none      
+      65  00:00:02.600  🟢 clean    0.000  scene_cut         none      
+      66  00:00:02.640  🟢 clean    0.000  scene_cut         none      
+      67  00:00:02.680  🟢 clean    0.000  scene_cut         none      
+      68  00:00:02.720  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      69  00:00:02.760  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      70  00:00:02.800  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      71  00:00:02.840  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      72  00:00:02.880  🟢 clean    0.000  scene_cut         none      
+      73  00:00:02.920  🟢 clean    0.000  scene_cut         none      
+      74  00:00:02.960  🟢 clean    0.000  scene_cut         none      
+      75  00:00:03.000  🟢 clean    0.000  scene_cut         none      
+      76  00:00:03.040  🟢 clean    0.000  scene_cut         none      
+      77  00:00:03.080  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      78  00:00:03.120  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      79  00:00:03.160  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      80  00:00:03.200  🟢 clean    0.000  scene_cut         none      
+      81  00:00:03.240  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      82  00:00:03.280  🔴 GLITCH   1.000  none              none      FrozenBlock_definitive
+      83  00:00:03.320  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      84  00:00:03.360  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      85  00:00:03.400  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      86  00:00:03.440  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      87  00:00:03.480  🔴 GLITCH   1.000  frozen_blocks     medium    FrozenBlock_definitive
+      88  00:00:03.520  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      89  00:00:03.560  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      90  00:00:03.600  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      91  00:00:03.640  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      92  00:00:03.680  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      93  00:00:03.720  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      94  00:00:03.760  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      95  00:00:03.800  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      96  00:00:03.840  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      97  00:00:03.880  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      98  00:00:03.920  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+      99  00:00:03.960  🔴 GLITCH   1.000  frozen_blocks     high      FrozenBlock_definitive
+
+==========================================================================================
+  CROSS-FILE SUMMARY
+==========================================================================================
+
+  File                                                   Frames   Glitched       %   Ranges  Duration
+  ────────────────────────────────────────────────────  ───────  ─────────  ──────  ───────  ──────────
+  glitch_65177.ts                                            79         74   93.7%        2  3.16s
+  glitch_65178.ts                                           106        103   97.2%        1  4.24s
+  glitch_67890.ts                                           100         97   97.0%        1  4.00s
+  media-u2i5e5nyz_b2628000_64969.ts                         100         96   96.0%        1  4.00s
+  media-u2i5e5nyz_b2628000_64970.ts                         100         79   79.0%        4  4.00s
+  ────────────────────────────────────────────────────  ───────  ─────────  ──────  ───────  ──────────
+  TOTAL                                                     485        449   92.6%
+
+  ARTIFACT TYPE LEGEND:
+  frozen_blocks  — Transmission/decoder error: blocks copied from previous frame
+                   (packet loss, bitstream corruption, decoder failure)
+  macroblocking  — H.264/HEVC codec artifact: sharp block boundaries
+                   (heavy compression, low bitrate, encoder error)
+  pixelation     — Spatial resolution artifact: visible block structure
+
+  DETECTION METHOD:
+  FrozenBlock_definitive — frozen_score >= 0.50 (>50% blocks identical to prev frame)
+  FrozenBlock            — frozen_score >= 0.15 AND MVAD >= 0.40
+  MVAD+*                 — ML model (RMViT) + spatial corroboration
+  MBRatio+MVAD           — Macroblock boundary ratio + ML model
+==========================================================================================
