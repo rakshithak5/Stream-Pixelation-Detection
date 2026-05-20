@@ -165,7 +165,6 @@ class MVADWrapper:
             # Convert to tensor (C, H, W)
             tensor = torch.from_numpy(f_norm.transpose(2, 0, 1)).float()
             processed.append(tensor)
-            processed.append(tensor)
 
         clip = torch.stack(processed, dim=1)  # (C, T, H, W)
         return clip.unsqueeze(0)

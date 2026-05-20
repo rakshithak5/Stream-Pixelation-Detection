@@ -1,278 +1,218 @@
+"""
+Core detection engine — Tier 1 spatial signals.
+All detectors operate on the Y (luma) channel: H.264/HEVC artifacts are primarily in luma.
+"""
 import cv2
 import numpy as np
-from typing import Tuple, Dict
+from typing import Dict
 from src.core.config import settings
 
 
+def _to_luma(frame: np.ndarray) -> np.ndarray:
+    """Convert BGR frame to Y (luma) channel."""
+    if len(frame.shape) == 2:
+        return frame.astype(np.float32)
+    yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+    return yuv[:, :, 0].astype(np.float32)
+
+
 class SpatialDetector:
-    """Tier 1 - Fast spatial checks that gate 70-80% of clean frames"""
-    
+    """Tier 1 — Fast spatial checks on the luma channel."""
+
     def __init__(self):
-        self.edge_threshold = settings.EDGE_THRESHOLD
+        self.edge_threshold        = settings.EDGE_THRESHOLD
         self.color_quant_threshold = settings.COLOR_QUANT_THRESHOLD
-        self.grid_sizes = settings.GRID_SIZES
-    
+        self.grid_sizes            = [8, 16, 32, 64]
+        self.edge_block_sizes      = [8, 16, 32, 64]
+
     def boundary_edge_pairing(self, frame: np.ndarray) -> float:
         """
-        Check both sides of macroblock boundaries simultaneously.
-        Natural edges: one side strong.
-        Macroblock discontinuity: both sides strong and aligned.
-        
-        Returns: edge score [0, 1], higher = more blocking artifacts
+        Paired gradient check at macroblock boundaries.
+        Natural edge: one side strong. Macroblock: both sides strong and aligned.
+        Covers H.264 (8/16px), H.265/HEVC (32px), AV1 (64px).
+        Returns: score [0, 1]
         """
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
-        h, w = gray.shape
-        
-        # Compute gradients
-        grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-        grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-        
+        luma = _to_luma(frame)
+        h, w = luma.shape
+        grad_x = cv2.Sobel(luma, cv2.CV_64F, 1, 0, ksize=3)
+        grad_y = cv2.Sobel(luma, cv2.CV_64F, 0, 1, ksize=3)
         edge_scores = []
-        
-        # Check 8x8 and 16x16 block boundaries (most common in H.264/HEVC)
-        for block_size in [8, 16]:
-            # Vertical boundaries
+
+        for block_size in self.edge_block_sizes:
             for x in range(block_size, w - block_size, block_size):
-                left_edge = np.abs(grad_x[:, x - 1])
-                right_edge = np.abs(grad_x[:, x])
-                
-                # Both sides strong = artifact
-                paired_strength = np.minimum(left_edge, right_edge)
-                edge_scores.append(np.mean(paired_strength))
-            
-            # Horizontal boundaries
+                paired = np.minimum(np.abs(grad_x[:, x - 1]), np.abs(grad_x[:, x]))
+                edge_scores.append(np.mean(paired))
             for y in range(block_size, h - block_size, block_size):
-                top_edge = np.abs(grad_y[y - 1, :])
-                bottom_edge = np.abs(grad_y[y, :])
-                
-                paired_strength = np.minimum(top_edge, bottom_edge)
-                edge_scores.append(np.mean(paired_strength))
-        
+                paired = np.minimum(np.abs(grad_y[y - 1, :]), np.abs(grad_y[y, :]))
+                edge_scores.append(np.mean(paired))
+
         if not edge_scores:
             return 0.0
-        
-        # Normalize to [0, 1]
-        score = np.mean(edge_scores) / 255.0
-        return min(score, 1.0)
-    
+        return float(min(np.mean(edge_scores) / 255.0, 1.0))
+
     def grid_periodicity_check(self, frame: np.ndarray) -> float:
         """
-        FFmpeg blockdetect equivalent - detect periodic grid patterns
-        at 8, 16, 32px intervals matching codec macroblock sizes.
-        
-        Returns: periodicity score [0, 1], higher = stronger grid pattern
+        Detects periodic variance dips at 8/16/32/64px intervals.
+        Macroblocking creates flat blocks → variance drops at boundaries.
+        Returns: score [0, 1]
         """
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
-        h, w = gray.shape
-        
-        # Compute row and column variance profiles
-        row_variance = np.var(gray, axis=1)
-        col_variance = np.var(gray, axis=0)
-        
-        periodicity_scores = []
-        
+        luma = _to_luma(frame)
+        row_variance = np.var(luma, axis=1)
+        col_variance = np.var(luma, axis=0)
+        scores = []
         for grid_size in self.grid_sizes:
-            # Check if variance dips align with grid boundaries
-            row_grid_alignment = self._check_grid_alignment(row_variance, grid_size)
-            col_grid_alignment = self._check_grid_alignment(col_variance, grid_size)
-            
-            periodicity_scores.append((row_grid_alignment + col_grid_alignment) / 2)
-        
-        return max(periodicity_scores) if periodicity_scores else 0.0
-    
+            r = self._check_grid_alignment(row_variance, grid_size)
+            c = self._check_grid_alignment(col_variance, grid_size)
+            scores.append((r + c) / 2)
+        return float(max(scores)) if scores else 0.0
+
     def _check_grid_alignment(self, variance_profile: np.ndarray, grid_size: int) -> float:
-        """Check if variance dips align with grid boundaries"""
         n = len(variance_profile)
-        grid_positions = list(range(0, n, grid_size))
-        
-        if len(grid_positions) < 2:
+        positions = list(range(0, n, grid_size))
+        if len(positions) < 2:
             return 0.0
-        
-        # Sample variance at grid boundaries vs. midpoints
-        boundary_variance = []
-        midpoint_variance = []
-        
-        for i in range(len(grid_positions) - 1):
-            start = grid_positions[i]
-            end = grid_positions[i + 1]
-            mid = (start + end) // 2
-            
-            if start < n and end < n and mid < n:
-                boundary_variance.append(variance_profile[start])
-                boundary_variance.append(variance_profile[end])
-                midpoint_variance.append(variance_profile[mid])
-        
-        if not boundary_variance or not midpoint_variance:
+        boundary, midpoint = [], []
+        for i in range(len(positions) - 1):
+            s, e, m = positions[i], positions[i + 1], (positions[i] + positions[i + 1]) // 2
+            if s < n and e < n and m < n:
+                boundary += [variance_profile[s], variance_profile[e]]
+                midpoint.append(variance_profile[m])
+        if not boundary or not midpoint:
             return 0.0
-        
-        # Strong grid = low variance at boundaries, high at midpoints
-        boundary_mean = np.mean(boundary_variance)
-        midpoint_mean = np.mean(midpoint_variance)
-        
-        if midpoint_mean == 0:
+        mid_mean = np.mean(midpoint)
+        if mid_mean == 0:
             return 0.0
-        
-        ratio = 1.0 - (boundary_mean / (midpoint_mean + 1e-6))
-        return max(0.0, min(ratio, 1.0))
-    
+        return float(max(0.0, min(1.0 - np.mean(boundary) / (mid_mean + 1e-6), 1.0)))
+
     def color_quantization_check(self, frame: np.ndarray) -> float:
         """
-        High saturation + low spatial variance = quantization artifact.
-        Natural vivid scenes have high saturation but fine detail.
-        
-        Returns: quantization score [0, 1], higher = more quantization
+        High saturation + low hue variance = color banding artifact.
+        Operates in HSV (color domain). Returns: score [0, 1]
         """
         if len(frame.shape) != 3:
             return 0.0
-        
-        # Convert to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         h, w = hsv.shape[:2]
-        
-        # Divide into blocks
         block_size = 16
-        quant_scores = []
-        
+        scores = []
         for y in range(0, h - block_size, block_size):
             for x in range(0, w - block_size, block_size):
-                block = hsv[y:y+block_size, x:x+block_size]
-                
-                # High saturation check
-                saturation = block[:, :, 1]
-                mean_sat = np.mean(saturation)
-                
-                if mean_sat < 50:  # Skip low-saturation blocks
+                block    = hsv[y:y + block_size, x:x + block_size]
+                mean_sat = np.mean(block[:, :, 1])
+                if mean_sat < 50:
                     continue
-                
-                # Low spatial variance check
-                hue = block[:, :, 0]
-                hue_variance = np.var(hue)
-                
-                # High saturation + very low variance = quantization (not just natural flat color)
-                # Threshold 20 is much tighter than 100 to avoid flagging natural scenes
-                if hue_variance < 20:
-                    quant_scores.append(mean_sat / 255.0)
-        
-        if not quant_scores:
-            return 0.0
-        
-        return np.mean(quant_scores)
-    
+                if np.var(block[:, :, 0]) < 20:
+                    scores.append(mean_sat / 255.0)
+        return float(np.mean(scores)) if scores else 0.0
+
     def compute_tier1_signals(self, frame: np.ndarray) -> Dict[str, float]:
-        """
-        Run all Tier 1 checks and return signals.
-        If all below threshold, frame is clean - no ML needed.
-        """
-        edge_score = self.boundary_edge_pairing(frame)
-        grid_score = self.grid_periodicity_check(frame)
+        """Run all Tier 1 checks and return signals dict."""
+        edge_score        = self.boundary_edge_pairing(frame)
+        grid_score        = self.grid_periodicity_check(frame)
         color_quant_score = self.color_quantization_check(frame)
-        
         return {
-            'edge_score': edge_score,
-            'grid_score': grid_score,
+            'edge_score':        edge_score,
+            'grid_score':        grid_score,
             'color_quant_score': color_quant_score,
-            'passes_gate': edge_score > self.edge_threshold or color_quant_score > self.color_quant_threshold
+            'passes_gate':       (
+                edge_score > self.edge_threshold or
+                color_quant_score > self.color_quant_threshold
+            )
         }
 
 
-class CompositeScorer:
-    """Combine all signals into final composite score"""
-    
-    def __init__(self):
-        self.weights = {
-            'boundary_edge': settings.BOUNDARY_EDGE_WEIGHT,
-            'mvad_blockiness': settings.MVAD_BLOCKINESS_WEIGHT,
-            'color_quant': settings.COLOR_QUANT_WEIGHT,
-            'mvad_pixelation': settings.MVAD_PIXELATION_WEIGHT,
-            'brisque': settings.BRISQUE_WEIGHT
-        }
-    
-    def compute_score(self, signals: Dict[str, float]) -> float:
-        """
-        Weighted composite: 35% edge + 30% MVAD block + 15% color + 10% MVAD pixel + 10% BRISQUE
-        """
-        score = 0.0
-        
-        score += signals.get('edge_score', 0.0) * self.weights['boundary_edge']
-        score += signals.get('mvad_blockiness', 0.0) * self.weights['mvad_blockiness']
-        score += signals.get('color_quant_score', 0.0) * self.weights['color_quant']
-        score += signals.get('mvad_pixelation', 0.0) * self.weights['mvad_pixelation']
-        score += signals.get('brisque_score', 0.0) * self.weights['brisque']
-        
-        return min(score, 1.0)
-    
-    def classify_artifact(self, signals: Dict[str, float]) -> str:
-        """
-        Determine artifact type based on dominant signal
-        """
-        edge_contribution = signals.get('edge_score', 0.0) * self.weights['boundary_edge']
-        color_contribution = signals.get('color_quant_score', 0.0) * self.weights['color_quant']
-        
-        # Check for color shift (video only)
-        if signals.get('color_shift_detected', False):
-            return 'color_shift'
-        
-        # Dominant signal determines type
-        if edge_contribution > color_contribution:
-            return 'macroblocking'
-        else:
-            return 'pixelation'
+def compute_dct_score(frame: np.ndarray, block_size: int = 8) -> float:
+    """
+    DCT periodic pattern analysis on luma channel.
+    Compares AC energy at grid-aligned block rows vs interior rows.
+    Macroblocking creates lower AC energy at codec grid positions.
+    Returns: score [0, 1] — informational only, not used in corroboration.
+    """
+    luma = _to_luma(frame)
+    h, w = luma.shape
+    block_rows, block_cols = h // block_size, w // block_size
+    if block_rows < 4 or block_cols < 4:
+        return 0.0
+
+    ac_map = np.full((block_rows, block_cols), -1.0, dtype=np.float32)
+    for br in range(block_rows):
+        for bc in range(block_cols):
+            block = luma[br * block_size:(br + 1) * block_size,
+                         bc * block_size:(bc + 1) * block_size]
+            if block.mean() < 10 or block.mean() > 245:
+                continue
+            dct_block = cv2.dct(block.astype(np.float32))
+            dc = float(dct_block[0, 0] ** 2)
+            ac = float(np.sum(dct_block[1:, :] ** 2) + np.sum(dct_block[:, 1:] ** 2))
+            ac_map[br, bc] = ac / (dc + 1e-6)
+
+    grid_ac, interior_ac = [], []
+    for br in range(block_rows):
+        valid = ac_map[br, :][ac_map[br, :] >= 0]
+        if len(valid) == 0:
+            continue
+        (grid_ac if br % 2 == 0 else interior_ac).append(float(valid.mean()))
+
+    if not grid_ac or not interior_ac:
+        return 0.0
+    interior_mean = float(np.mean(interior_ac))
+    if interior_mean < 1e-6:
+        return 0.0
+    return float(np.clip(1.0 - float(np.mean(grid_ac)) / (interior_mean + 1e-6), 0.0, 1.0))
+
+
+def compute_block_variance_score(frame: np.ndarray, block_size: int = 8) -> float:
+    """
+    Pixel-level flatness detection on luma channel.
+    Flags blocks with: flat interior + strong boundary gradient + no interior gradients.
+    Distinguishes macroblocked blocks from natural smooth regions (bokeh, sky).
+    Returns: score [0, 1]
+    """
+    luma = _to_luma(frame)
+    h, w = luma.shape
+    sobelx = cv2.Sobel(luma, cv2.CV_32F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(luma, cv2.CV_32F, 0, 1, ksize=3)
+    grad   = np.sqrt(sobelx ** 2 + sobely ** 2)
+
+    artifact_blocks = 0
+    total_blocks    = 0
+    for by in range(0, h - block_size, block_size):
+        for bx in range(0, w - block_size, block_size):
+            bluma = luma[by:by + block_size, bx:bx + block_size]
+            bgrad = grad[by:by + block_size, bx:bx + block_size]
+            boundary_grad = np.concatenate([bgrad[0,:], bgrad[-1,:], bgrad[:,0], bgrad[:,-1]])
+            total_blocks += 1
+            if (float(np.std(bluma[1:-1, 1:-1])) < 3.0 and
+                    float(np.mean(boundary_grad)) > 15.0 and
+                    float(grad[by+1:by+block_size-1, bx+1:bx+block_size-1].mean()) < 5.0):
+                artifact_blocks += 1
+
+    return float(artifact_blocks / total_blocks) if total_blocks > 0 else 0.0
 
 
 def compute_brisque_score(frame: np.ndarray) -> float:
     """
-    Gradient-ratio heuristic quality score, [0, 100].
-    
-    Higher = more degraded / more block-artifact energy at 8px boundaries.
-    
-    Weights: 
-    - 0.75 blockiness (primary) - gradient energy at 8px boundaries vs interior
-    - 0.25 sharpness penalty (secondary) - Laplacian variance
-    
-    The sharpness weight is intentionally low — block edges themselves create
-    high Laplacian variance, so sharpness alone is not a reliable signal.
-    
-    Returns:
-        Score in [0, 100] range, higher = more artifacts
+    Gradient-ratio quality metric on luma channel.
+    Compares gradient energy at 8px boundary rows/cols vs interior rows/cols (3px inside).
+    Clean: ratio ≈ 1.0. Blocked: ratio > 2.0.
+    Returns: score [0, 100]
     """
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32) if len(frame.shape) == 3 else frame.astype(np.float32)
-    h, w = gray.shape
+    luma = _to_luma(frame)
+    h, w = luma.shape
+    sobelx = cv2.Sobel(luma, cv2.CV_32F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(luma, cv2.CV_32F, 0, 1, ksize=3)
+    grad   = np.sqrt(sobelx ** 2 + sobely ** 2)
 
-    # Compute gradient magnitude
-    sobelx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
-    sobely = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
-    gradient_mag = np.sqrt(sobelx ** 2 + sobely ** 2)
+    h_b = [i for i in range(0, h, 8) if i < h]
+    h_i = [i + 3 for i in range(0, h, 8) if i + 3 < h]
+    v_b = [j for j in range(0, w, 8) if j < w]
+    v_i = [j + 3 for j in range(0, w, 8) if j + 3 < w]
 
-    # Correct BRISQUE: compare gradient at boundary lines vs 3px inside
-    # Horizontal: compare rows at multiples of 8 vs rows 3px inside each block
-    h_boundary_rows = [i for i in range(0, h, 8) if i < h]
-    h_interior_rows = [i + 3 for i in range(0, h, 8) if i + 3 < h]
+    boundary = (float(grad[h_b, :].mean()) + float(grad[:, v_b].mean())) / 2
+    interior = (float(grad[h_i, :].mean()) + float(grad[:, v_i].mean())) / 2
+    ratio    = boundary / (interior + 1e-6)
 
-    # Vertical: compare cols at multiples of 8 vs cols 3px inside each block
-    v_boundary_cols = [j for j in range(0, w, 8) if j < w]
-    v_interior_cols = [j + 3 for j in range(0, w, 8) if j + 3 < w]
-
-    # Horizontal blocking: strong gradients along horizontal boundary rows
-    h_boundary_energy = float(gradient_mag[h_boundary_rows, :].mean()) if h_boundary_rows else 0.0
-    h_interior_energy = float(gradient_mag[h_interior_rows, :].mean()) if h_interior_rows else 1e-6
-
-    # Vertical blocking: strong gradients along vertical boundary cols
-    v_boundary_energy = float(gradient_mag[:, v_boundary_cols].mean()) if v_boundary_cols else 0.0
-    v_interior_energy = float(gradient_mag[:, v_interior_cols].mean()) if v_interior_cols else 1e-6
-
-    # Combined blockiness ratio
-    boundary_energy = (h_boundary_energy + v_boundary_energy) / 2
-    interior_energy = (h_interior_energy + v_interior_energy) / 2
-    blockiness_ratio = boundary_energy / (interior_energy + 1e-6)
-
-    # Sharpness penalty using Laplacian variance
-    lap_var = cv2.Laplacian(gray, cv2.CV_32F).var()
+    lap_var           = float(cv2.Laplacian(luma, cv2.CV_32F).var())
     sharpness_penalty = float(np.clip(100.0 - np.log1p(lap_var) * 8.0, 0.0, 100.0))
-
-    # Blockiness score: normalize ratio to [0, 100]
-    blockiness_score = float(np.clip((blockiness_ratio - 1.0) / 3.0 * 100.0, 0.0, 100.0))
-
-    # Weighted combination: 75% blockiness + 25% sharpness
-    final_score = float(np.clip(0.75 * blockiness_score + 0.25 * sharpness_penalty, 0.0, 100.0))
-
-    return final_score
+    blockiness_score  = float(np.clip((ratio - 1.0) / 3.0 * 100.0, 0.0, 100.0))
+    return float(np.clip(0.75 * blockiness_score + 0.25 * sharpness_penalty, 0.0, 100.0))
