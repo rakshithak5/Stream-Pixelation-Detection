@@ -190,6 +190,51 @@ def compute_block_variance_score(frame: np.ndarray, block_size: int = 8) -> floa
     return float(artifact_blocks / total_blocks) if total_blocks > 0 else 0.0
 
 
+def compute_macroblock_ratio_score(frame: np.ndarray) -> float:
+    """
+    Boundary-to-interior gradient ratio score for real broadcast macroblocking.
+
+    Real H.264/HEVC macroblocking creates unnaturally sharp discontinuities at
+    16x16 (or 32x32) block boundaries even when block interiors have real content.
+    This is distinct from synthetic pixelation (flat blocks) — the interior has
+    real texture but the boundary is disproportionately strong.
+
+    Metric: fraction of 16x16 blocks where boundary_mean / interior_mean > 2.0
+    - Real broadcast macroblocking: 10–30% of blocks
+    - Clean broadcast frames:       < 3% of blocks
+
+    Returns: score [0, 1]
+    """
+    luma = _to_luma(frame)
+    h, w = luma.shape
+    block_size = 16
+
+    sobelx = cv2.Sobel(luma, cv2.CV_32F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(luma, cv2.CV_32F, 0, 1, ksize=3)
+    grad   = np.sqrt(sobelx ** 2 + sobely ** 2)
+
+    high_ratio = 0
+    total      = 0
+
+    for by in range(0, h - block_size, block_size):
+        for bx in range(0, w - block_size, block_size):
+            bgrad    = grad[by:by + block_size, bx:bx + block_size]
+            boundary = np.concatenate([
+                bgrad[0, :], bgrad[-1, :], bgrad[:, 0], bgrad[:, -1]
+            ])
+            interior = bgrad[2:-2, 2:-2]
+
+            bnd_mean = float(np.mean(boundary))
+            int_mean = float(np.mean(interior))
+            total   += 1
+
+            # Require minimum boundary strength to avoid flat/dark regions
+            if bnd_mean > 20.0 and bnd_mean / (int_mean + 1e-6) > 2.0:
+                high_ratio += 1
+
+    return float(high_ratio / total) if total > 0 else 0.0
+
+
 def compute_frozen_block_score(frame: np.ndarray, prev_frame: np.ndarray, block_size: int = 8) -> float:
     """
     Detects frozen/repeated blocks — a transmission error artifact where decoder

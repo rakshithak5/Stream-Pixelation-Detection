@@ -21,6 +21,7 @@ from src.core.detection import (
     compute_dct_score,
     compute_block_boundary_density,
     compute_artifact_col_coverage,
+    compute_macroblock_ratio_score,
 )
 from src.models.mvad_wrapper import model_manager
 from src.core.config import settings
@@ -97,6 +98,7 @@ class ImageDetector:
         dct_score        = compute_dct_score(image)
         boundary_density = compute_block_boundary_density(image)
         artifact_col_cov = compute_artifact_col_coverage(image)
+        mb_ratio_score   = compute_macroblock_ratio_score(image)
 
         edge_score    = tier1_signals['edge_score']
         grid_score    = tier1_signals['grid_score']
@@ -109,7 +111,12 @@ class ImageDetector:
         # block_var_score > 0 means actual flat-interior + strong-boundary blocks
         # exist in the image. This is the ground truth for real macroblocking.
         # Without this, all other signals can fire on non-artifact content.
-        has_block_structure = block_var_score >= MIN_BLOCK_VAR_FOR_CORROBORATION
+        # mb_ratio_score also counts as block structure evidence for real broadcast
+        # macroblocking where blocks have real content but unnaturally sharp boundaries.
+        has_block_structure = (
+            block_var_score >= MIN_BLOCK_VAR_FOR_CORROBORATION or
+            (mb_ratio_score >= 0.06 and artifact_col_cov >= 0.25)
+        )
 
         # ── Corroboration signals (each gated by block structure) ─────────────
         # Edge corroboration: requires block structure AND high boundary density
@@ -143,12 +150,17 @@ class ImageDetector:
         # Block variance self-corroborates (it IS the block structure signal)
         block_var_corroborates = block_var_score > 0.30
 
+        # Macroblock ratio: real broadcast macroblocking with content-filled blocks
+        # Requires artifact_col_cov >= 0.25 to exclude color bars (col_cov=0.175)
+        mb_ratio_corroborates = mb_ratio_score >= 0.08 and artifact_col_cov >= 0.25
+
         corroborating_signals = {
             'edge':          edge_corroborates,
             'brisque':       brisque_corroborates,
             'grid':          grid_corroborates,
             'tier1_spatial': tier1_spatial_corroborates,
             'block_var':     block_var_corroborates,
+            'mb_ratio':      mb_ratio_corroborates,
         }
         has_corroboration = any(corroborating_signals.values())
         corroborating_signal_name = next(
@@ -160,6 +172,7 @@ class ImageDetector:
         sufficient_coverage = (
             (has_corroboration and has_block_structure) or
             block_var_score >= 0.15 or
+            (mb_ratio_score >= 0.10 and artifact_col_cov >= 0.25) or
             (mvad_score >= 0.60 and has_block_structure)
         )
 
@@ -274,6 +287,7 @@ class ImageDetector:
                 'dct_score':          dct_score,
                 'boundary_density':   boundary_density,
                 'artifact_col_cov':   artifact_col_cov,
+                'mb_ratio_score':     mb_ratio_score,
             },
             'voting': {
                 'artifact_votes': sum(votes.values()),
@@ -298,6 +312,7 @@ class ImageDetector:
                 f'MVAD={mvad_score:.3f}, Tier1={tier1_score:.3f}, '
                 f'BRISQUE={brisque_score:.1f}, DCT={dct_score:.3f}, '
                 f'BlockVar={block_var_score:.3f}, BoundaryDensity={boundary_density:.3f}, '
+                f'MBRatio={mb_ratio_score:.3f}, '
                 f'HasBlockStructure={has_block_structure}, Coverage={sufficient_coverage}'
             ),
         }

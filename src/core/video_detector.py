@@ -12,6 +12,7 @@ from src.core.detection import (
     compute_block_boundary_density,
     compute_artifact_col_coverage,
     compute_frozen_block_score,
+    compute_macroblock_ratio_score,
 )
 from src.models.mvad_wrapper import model_manager
 from src.core.temporal import temporal_state_manager
@@ -63,7 +64,12 @@ class VideoDetector:
 
         tier1_signals = self.spatial_detector.compute_tier1_signals(frame)
 
-        if temporal_state.scene_cut_guard(frame, tier1_signals, frame_number):
+        # Compute frozen score BEFORE scene cut guard so we can override it
+        # A frozen frame (>50% blocks identical to prev) is a glitch, not a scene cut
+        pre_frozen_score = compute_frozen_block_score(frame, temporal_state.prev_frame)
+
+        if (pre_frozen_score < 0.50 and
+                temporal_state.scene_cut_guard(frame, tier1_signals, frame_number)):
             temporal_state.update_window(0.0, False)
             return {
                 'artifact_detected': False,
@@ -84,17 +90,24 @@ class VideoDetector:
         color_shift      = temporal_state.color_shift_detection(frame)
         boundary_density = compute_block_boundary_density(frame)
         artifact_col_cov = compute_artifact_col_coverage(frame)
+        mb_ratio_score   = compute_macroblock_ratio_score(frame)
 
         # Frozen block detection — requires previous frame from temporal state
         frozen_block_score = compute_frozen_block_score(frame, temporal_state.prev_frame)
-
-        # Frozen block artifact: transmission/decoder error where blocks are
-        # copied from previous frame. Threshold: >15% frozen blocks = artifact.
-        # (Normal video: <5%, glitched streams: 20-65%)
-        FROZEN_BLOCK_THRESHOLD = 0.15
-        is_frozen_artifact = frozen_block_score >= FROZEN_BLOCK_THRESHOLD
+        # Note: is_frozen_artifact/is_frozen_definitive computed after mvad_score below
 
         mvad_score    = max(mvad_blockiness, mvad_pixelation)
+
+        # Three-tier frozen block classification (needs mvad_score):
+        # Tier A: frozen >= 0.50 → definitive glitch regardless of MVAD
+        # Tier B: frozen >= 0.15 AND MVAD >= 0.40 → confirmed glitch
+        FROZEN_BLOCK_THRESHOLD      = 0.15
+        FROZEN_DEFINITIVE_THRESHOLD = 0.50
+        is_frozen_definitive = frozen_block_score >= FROZEN_DEFINITIVE_THRESHOLD
+        is_frozen_artifact   = (
+            frozen_block_score >= FROZEN_BLOCK_THRESHOLD and
+            (mvad_score >= 0.40 or is_frozen_definitive)
+        )
         tier1_score   = (
             tier1_signals['edge_score']        * 0.50 +
             tier1_signals['color_quant_score'] * 0.40 +
@@ -103,7 +116,10 @@ class VideoDetector:
         tier1_spatial = tier1_signals['edge_score'] * 0.70 + tier1_signals['grid_score'] * 0.30
 
         # Block structure gate — same logic as image_detector
-        has_block_structure = block_var_score >= MIN_BLOCK_VAR_FOR_CORROBORATION
+        has_block_structure = (
+            block_var_score >= MIN_BLOCK_VAR_FOR_CORROBORATION or
+            (mb_ratio_score >= 0.06 and artifact_col_cov >= 0.25)
+        )
 
         edge_corroborates = (
             tier1_signals['edge_score'] > 0.05 and
@@ -115,18 +131,21 @@ class VideoDetector:
         grid_corroborates      = tier1_signals['grid_score'] > 0.05 and has_block_structure
         tier1_spatial_corr     = tier1_spatial > 0.035 and has_block_structure
         block_var_corroborates = block_var_score > 0.30
+        mb_ratio_corroborates  = mb_ratio_score >= 0.08 and artifact_col_cov >= 0.25
 
         corroborating = (
             edge_corroborates or
             brisque_corroborates or
             grid_corroborates or
             tier1_spatial_corr or
-            block_var_corroborates
+            block_var_corroborates or
+            mb_ratio_corroborates
         )
 
         sufficient_coverage = (
             (corroborating and has_block_structure) or
             block_var_score >= 0.15 or
+            (mb_ratio_score >= 0.10 and artifact_col_cov >= 0.25) or
             (mvad_score >= 0.60 and has_block_structure)
         )
 
@@ -134,14 +153,23 @@ class VideoDetector:
         high_mvad_block_structure = block_var_score >= MIN_BLOCK_VAR_FOR_HIGH_MVAD
 
         # Path -1: Frozen block artifact (transmission/decoder error)
-        # Detected purely from temporal signal — no spatial block structure needed.
-        # MVAD must also be elevated (>0.40) to avoid false positives on static scenes.
-        if is_frozen_artifact and mvad_score >= 0.40:
+        # Tier A: frozen >= 0.50 → definitive glitch, no MVAD needed
+        # Tier B: frozen >= 0.15 AND MVAD >= 0.40 → confirmed glitch
+        if is_frozen_definitive:
+            confidence, is_flagged, decision_maker = (
+                frozen_block_score,
+                True,
+                'FrozenBlock_definitive'
+            )
+        elif is_frozen_artifact:
             confidence, is_flagged, decision_maker = (
                 max(frozen_block_score, mvad_score * 0.8),
                 True,
                 'FrozenBlock'
             )
+        # Path -0.5: Macroblock ratio + MVAD (real broadcast macroblocking)
+        elif mb_ratio_score >= 0.08 and artifact_col_cov >= 0.25 and mvad_score >= 0.40:
+            confidence, is_flagged, decision_maker = mvad_score, True, 'MBRatio+MVAD'
         elif (very_high_mvad and high_mvad_block_structure and
                 (corroborating or brisque_score > 30.0)):
             confidence, is_flagged, decision_maker = mvad_score, True, 'MVAD_highconf'
@@ -177,8 +205,10 @@ class VideoDetector:
 
         artifact_type = None
         if alert_fired:
-            if decision_maker == 'FrozenBlock':
+            if decision_maker in ('FrozenBlock', 'FrozenBlock_definitive'):
                 artifact_type = 'frozen_blocks'
+            elif decision_maker == 'MBRatio+MVAD':
+                artifact_type = 'macroblocking'
             else:
                 artifact_type = 'macroblocking' if mvad_blockiness > mvad_pixelation else 'pixelation'
 
@@ -201,6 +231,7 @@ class VideoDetector:
                 'boundary_density':   boundary_density,
                 'artifact_col_cov':   artifact_col_cov,
                 'frozen_block_score': frozen_block_score,
+                'mb_ratio_score':     mb_ratio_score,
             },
             'temporal': {
                 'consecutive_flagged': temporal_state.consecutive_flagged,
