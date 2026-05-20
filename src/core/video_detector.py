@@ -68,8 +68,29 @@ class VideoDetector:
         # A frozen frame (>50% blocks identical to prev) is a glitch, not a scene cut
         pre_frozen_score = compute_frozen_block_score(frame, temporal_state.prev_frame)
 
+        # Pre-compute mb_ratio for scene cut guard (Fix #3)
+        pre_mb_ratio = compute_macroblock_ratio_score(frame)
+
         if (pre_frozen_score < 0.50 and
-                temporal_state.scene_cut_guard(frame, tier1_signals, frame_number)):
+                temporal_state.scene_cut_guard(
+                    frame, tier1_signals, frame_number,
+                    mb_ratio_score=pre_mb_ratio,
+                    frozen_score=pre_frozen_score,
+                )):
+            # Scene cut: reset consecutive counter so glitch burst doesn't carry over
+            temporal_state.consecutive_flagged = 0
+            temporal_state.update_window(0.0, False)
+            return {
+                'artifact_detected': False,
+                'alert_fired':       False,
+                'confidence':        0.0,
+                'artifact_type':     'scene_cut',
+                'severity':          'none',
+                'signals':           tier1_signals,
+                'tier':              3,
+                'stream_id':         stream_id,
+                'note':              'Scene cut detected - skipped'
+            }
             temporal_state.update_window(0.0, False)
             return {
                 'artifact_detected': False,
@@ -202,6 +223,11 @@ class VideoDetector:
         persistence_met = temporal_state.block_persistence_check(is_flagged, frame_gap)
         temporal_state.update_window(confidence, is_flagged)
         alert_fired = temporal_state.should_alert() and persistence_met
+
+        # Fix #2: artifact_detected is the per-frame signal — it must be grounded
+        # in the frame's own signals, not just the temporal window carry-over.
+        # is_flagged already reflects the frame's own detection paths above.
+        # We do NOT override is_flagged with the window here — that's alert_fired's job.
 
         artifact_type = None
         if alert_fired:

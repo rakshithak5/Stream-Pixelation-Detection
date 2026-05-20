@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import cv2
 import numpy as np
-from typing import Optional
+from typing import Optional, Generator, Tuple
 import io
 from PIL import Image
 import requests
@@ -46,6 +46,95 @@ app.add_middleware(
 # Create results directory
 RESULTS_DIR = Path("data/results")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# ── Fix #1: PyAV-based frame reader ──────────────────────────────────────────
+def iter_video_frames_pyav(
+    video_path: str,
+    sample_rate: int = 1,
+    max_frames: Optional[int] = None,
+) -> Generator[Tuple[int, float, np.ndarray], None, None]:
+    """
+    Reliable frame iterator using PyAV (libav/ffmpeg backend).
+
+    Fixes the OpenCV frame-dropping bug on .ts transport streams.
+    OpenCV's VideoCapture silently drops frames in .ts files (decoded 50/79
+    in testing). PyAV decodes every frame correctly.
+
+    Yields: (frame_number, timestamp_seconds, bgr_frame_ndarray)
+    """
+    try:
+        import av
+    except ImportError:
+        raise RuntimeError(
+            "PyAV not installed. Run: pip install av"
+        )
+
+    container = av.open(video_path)
+    video_stream = next(
+        (s for s in container.streams if s.type == 'video'), None
+    )
+    if video_stream is None:
+        container.close()
+        raise ValueError("No video stream found in file")
+
+    fps = float(video_stream.average_rate or video_stream.base_rate or 25)
+    frame_number = 0
+    analyzed_count = 0
+
+    try:
+        for packet in container.demux(video_stream):
+            for av_frame in packet.decode():
+                if max_frames and analyzed_count >= max_frames:
+                    return
+
+                if frame_number % sample_rate == 0:
+                    # Convert to BGR numpy array (OpenCV format)
+                    bgr_frame = av_frame.to_ndarray(format='bgr24')
+                    ts = float(av_frame.pts * video_stream.time_base) if av_frame.pts else frame_number / fps
+                    yield frame_number, ts, bgr_frame
+                    analyzed_count += 1
+
+                frame_number += 1
+    finally:
+        container.close()
+
+
+def get_video_properties_pyav(video_path: str) -> dict:
+    """Get video metadata using PyAV."""
+    try:
+        import av
+        container = av.open(video_path)
+        video_stream = next(
+            (s for s in container.streams if s.type == 'video'), None
+        )
+        if video_stream is None:
+            container.close()
+            return {'width': 0, 'height': 0, 'fps': 25.0, 'total_frames': 0, 'duration': 0.0}
+
+        fps = float(video_stream.average_rate or video_stream.base_rate or 25)
+        total_frames = video_stream.frames or 0
+        duration = float(video_stream.duration * video_stream.time_base) if video_stream.duration else 0.0
+        width  = video_stream.codec_context.width
+        height = video_stream.codec_context.height
+        container.close()
+        return {
+            'width': width, 'height': height,
+            'fps': fps, 'total_frames': total_frames, 'duration': duration,
+        }
+    except Exception:
+        # Fallback to OpenCV for non-.ts files
+        cap = cv2.VideoCapture(video_path)
+        props = {
+            'width':        int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+            'height':       int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            'fps':          cap.get(cv2.CAP_PROP_FPS) or 25.0,
+            'total_frames': int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
+            'duration':     0.0,
+        }
+        props['duration'] = props['total_frames'] / props['fps'] if props['fps'] > 0 else 0.0
+        cap.release()
+        return props
 
 
 def normalize_json_value(value):
@@ -331,138 +420,87 @@ async def analyze_video(
 ):
     """
     Analyze video file for macroblocking and pixelation artifacts.
-    Upload video file directly.
-    Results are automatically saved to JSON.
-    
+
+    Uses PyAV (libav/ffmpeg) for frame decoding — correctly handles .ts
+    transport streams without the frame-dropping bug in cv2.VideoCapture.
+
     Args:
-        file: Video file upload (.ts, .mp4, etc.)
-        max_frames: Maximum frames to analyze (None = all)
-        sample_rate: Analyze every Nth frame (default: 1)
-    
-    Returns:
-        Detection results with frame-by-frame analysis
+        file:        Video file upload (.ts, .mp4, .mov, etc.)
+        max_frames:  Maximum frames to analyze (None = all)
+        sample_rate: Analyze every Nth frame (default: 1 = every frame)
     """
+    temp_file = None
     try:
-        # Save to temporary file
-        temp_file = None
-        try:
-            # Save uploaded file
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix)
-            contents = await file.read()
-            temp_file.write(contents)
-            temp_file.close()
-            video_path = temp_file.name
-            source = file.filename
-            
-            # Open video
-            cap = cv2.VideoCapture(video_path)
-            
-            if not cap.isOpened():
-                raise HTTPException(status_code=400, detail="Failed to open video file")
-            
-            # Get video properties
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            duration = total_frames / fps if fps > 0 else 0
-            
-            # Generate stream ID
-            stream_id = f"api_{uuid.uuid4().hex[:8]}"
-            video_detector.reset_stream(stream_id)
-            
-            # Analyze frames
-            results = []
-            frame_number = 0
-            analyzed_count = 0
-            alert_count = 0
-            flagged_count = 0
-            
-            while cap.isOpened():
-                ret, frame = cap.read()
-                
-                if not ret:
-                    break
-                
-                # Check max frames limit
-                if max_frames and analyzed_count >= max_frames:
-                    break
-                
-                # Sample rate check
-                if frame_number % sample_rate != 0:
-                    frame_number += 1
-                    continue
-                
-                # Analyze frame
-                frame_result = video_detector.analyze_frame(
-                    frame=frame,
-                    stream_id=stream_id,
-                    frame_number=frame_number,
-                    qp_value=None
-                )
-                
-                # Add frame metadata
-                frame_result['frame_number'] = frame_number
-                frame_result['timestamp'] = frame_number / fps if fps > 0 else 0
-                
-                results.append(frame_result)
-                analyzed_count += 1
-                
-                # Track statistics
-                if frame_result['artifact_detected']:
-                    flagged_count += 1
-                
-                if frame_result['alert_fired']:
-                    alert_count += 1
-                
-                frame_number += 1
-            
-            cap.release()
-            video_detector.reset_stream(stream_id)
-            
-            # Compute average signals (skip scene cut frames and boolean fields)
-            avg_signals = compute_average_signals(results)
-            
-            # Build response
-            response = {
-                'source': source,
-                'source_type': 'upload',
-                'video_properties': {
-                    'width': width,
-                    'height': height,
-                    'fps': fps,
-                    'total_frames': total_frames,
-                    'duration': duration
-                },
-                'analysis_settings': {
-                    'sample_rate': sample_rate,
-                    'max_frames': max_frames if max_frames else None,
-                    'frames_analyzed': analyzed_count
-                },
-                'summary': {
-                    'frames_flagged': flagged_count,
-                    'alerts_fired': alert_count,
-                    'flagged_percentage': flagged_count/analyzed_count*100 if analyzed_count > 0 else 0,
-                    'alert_percentage': alert_count/analyzed_count*100 if analyzed_count > 0 else 0
-                },
-                'average_signals': avg_signals,
-                'frame_results': results
-            }
-            
-            # Save result to JSON
-            json_path = save_result_to_json(response, 'video')
-            response['saved_to'] = json_path
-            response = normalize_json_value(response)
-            
-            return JSONResponse(content=response)
-        
-        finally:
-            # Cleanup temp file
-            if temp_file and Path(temp_file.name).exists():
-                Path(temp_file.name).unlink()
-    
+        suffix = Path(file.filename).suffix if file.filename else '.ts'
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        contents = await file.read()
+        temp_file.write(contents)
+        temp_file.close()
+        video_path = temp_file.name
+        source = file.filename
+
+        props = get_video_properties_pyav(video_path)
+        stream_id = f"api_{uuid.uuid4().hex[:8]}"
+        video_detector.reset_stream(stream_id)
+
+        results = []
+        flagged_count = 0
+        alert_count   = 0
+
+        for frame_number, timestamp, frame in iter_video_frames_pyav(
+            video_path, sample_rate=sample_rate, max_frames=max_frames
+        ):
+            frame_result = video_detector.analyze_frame(
+                frame=frame,
+                stream_id=stream_id,
+                frame_number=frame_number,
+                qp_value=None,
+            )
+            frame_result['frame_number'] = frame_number
+            frame_result['timestamp']    = round(timestamp, 4)
+            results.append(frame_result)
+
+            if frame_result['artifact_detected']:
+                flagged_count += 1
+            if frame_result['alert_fired']:
+                alert_count += 1
+
+        video_detector.reset_stream(stream_id)
+        analyzed_count = len(results)
+        avg_signals    = compute_average_signals(results)
+
+        response = {
+            'source':      source,
+            'source_type': 'upload',
+            'video_properties': {
+                **props,
+                'frames_decoded': analyzed_count,
+            },
+            'analysis_settings': {
+                'sample_rate': sample_rate,
+                'max_frames':  max_frames,
+                'frames_analyzed': analyzed_count,
+                'decoder': 'pyav',
+            },
+            'summary': {
+                'frames_flagged':    flagged_count,
+                'alerts_fired':      alert_count,
+                'flagged_percentage': flagged_count / analyzed_count * 100 if analyzed_count > 0 else 0,
+                'alert_percentage':   alert_count  / analyzed_count * 100 if analyzed_count > 0 else 0,
+            },
+            'average_signals': avg_signals,
+            'frame_results':   results,
+        }
+
+        json_path = save_result_to_json(response, 'video')
+        response['saved_to'] = json_path
+        return JSONResponse(content=normalize_json_value(response))
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Video analysis failed: {str(e)}")
+    finally:
+        if temp_file and Path(temp_file.name).exists():
+            Path(temp_file.name).unlink(missing_ok=True)
 
 
 @app.post("/analyze/video/url")
@@ -473,138 +511,76 @@ async def analyze_video_url(
 ):
     """
     Analyze video from URL for macroblocking and pixelation artifacts.
-    Provide video URL.
-    Results are automatically saved to JSON.
-    
-    Args:
-        video_url: URL to video file
-        max_frames: Maximum frames to analyze (None = all)
-        sample_rate: Analyze every Nth frame (default: 1)
-    
-    Returns:
-        Detection results with frame-by-frame analysis
+    Uses PyAV for reliable .ts frame decoding.
     """
+    temp_file = None
     try:
-        # Save to temporary file
-        temp_file = None
-        try:
-            # Download from URL
-            contents = download_from_url(video_url)
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
-            temp_file.write(contents)
-            temp_file.close()
-            video_path = temp_file.name
-            source = video_url
-            
-            # Open video
-            cap = cv2.VideoCapture(video_path)
-            
-            if not cap.isOpened():
-                raise HTTPException(status_code=400, detail="Failed to open video file")
-            
-            # Get video properties
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            duration = total_frames / fps if fps > 0 else 0
-            
-            # Generate stream ID
-            stream_id = f"api_{uuid.uuid4().hex[:8]}"
-            video_detector.reset_stream(stream_id)
-            
-            # Analyze frames
-            results = []
-            frame_number = 0
-            analyzed_count = 0
-            alert_count = 0
-            flagged_count = 0
-            
-            while cap.isOpened():
-                ret, frame = cap.read()
-                
-                if not ret:
-                    break
-                
-                # Check max frames limit
-                if max_frames and analyzed_count >= max_frames:
-                    break
-                
-                # Sample rate check
-                if frame_number % sample_rate != 0:
-                    frame_number += 1
-                    continue
-                
-                # Analyze frame
-                frame_result = video_detector.analyze_frame(
-                    frame=frame,
-                    stream_id=stream_id,
-                    frame_number=frame_number,
-                    qp_value=None
-                )
-                
-                # Add frame metadata
-                frame_result['frame_number'] = frame_number
-                frame_result['timestamp'] = frame_number / fps if fps > 0 else 0
-                
-                results.append(frame_result)
-                analyzed_count += 1
-                
-                # Track statistics
-                if frame_result['artifact_detected']:
-                    flagged_count += 1
-                
-                if frame_result['alert_fired']:
-                    alert_count += 1
-                
-                frame_number += 1
-            
-            cap.release()
-            video_detector.reset_stream(stream_id)
-            
-            # Compute average signals (skip scene cut frames and boolean fields)
-            avg_signals = compute_average_signals(results)
-            
-            # Build response
-            response = {
-                'source': source,
-                'source_type': 'url',
-                'video_properties': {
-                    'width': width,
-                    'height': height,
-                    'fps': fps,
-                    'total_frames': total_frames,
-                    'duration': duration
-                },
-                'analysis_settings': {
-                    'sample_rate': sample_rate,
-                    'max_frames': max_frames if max_frames else None,
-                    'frames_analyzed': analyzed_count
-                },
-                'summary': {
-                    'frames_flagged': flagged_count,
-                    'alerts_fired': alert_count,
-                    'flagged_percentage': flagged_count/analyzed_count*100 if analyzed_count > 0 else 0,
-                    'alert_percentage': alert_count/analyzed_count*100 if analyzed_count > 0 else 0
-                },
-                'average_signals': avg_signals,
-                'frame_results': results
-            }
-            
-            # Save result to JSON
-            json_path = save_result_to_json(response, 'video')
-            response['saved_to'] = json_path
-            response = normalize_json_value(response)
-            
-            return JSONResponse(content=response)
-        
-        finally:
-            # Cleanup temp file
-            if temp_file and Path(temp_file.name).exists():
-                Path(temp_file.name).unlink()
-    
+        contents = download_from_url(video_url)
+        suffix = Path(video_url).suffix or '.ts'
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        temp_file.write(contents)
+        temp_file.close()
+        video_path = temp_file.name
+
+        props = get_video_properties_pyav(video_path)
+        stream_id = f"api_{uuid.uuid4().hex[:8]}"
+        video_detector.reset_stream(stream_id)
+
+        results = []
+        flagged_count = 0
+        alert_count   = 0
+
+        for frame_number, timestamp, frame in iter_video_frames_pyav(
+            video_path, sample_rate=sample_rate, max_frames=max_frames
+        ):
+            frame_result = video_detector.analyze_frame(
+                frame=frame,
+                stream_id=stream_id,
+                frame_number=frame_number,
+                qp_value=None,
+            )
+            frame_result['frame_number'] = frame_number
+            frame_result['timestamp']    = round(timestamp, 4)
+            results.append(frame_result)
+
+            if frame_result['artifact_detected']:
+                flagged_count += 1
+            if frame_result['alert_fired']:
+                alert_count += 1
+
+        video_detector.reset_stream(stream_id)
+        analyzed_count = len(results)
+        avg_signals    = compute_average_signals(results)
+
+        response = {
+            'source':      video_url,
+            'source_type': 'url',
+            'video_properties': {**props, 'frames_decoded': analyzed_count},
+            'analysis_settings': {
+                'sample_rate': sample_rate,
+                'max_frames':  max_frames,
+                'frames_analyzed': analyzed_count,
+                'decoder': 'pyav',
+            },
+            'summary': {
+                'frames_flagged':    flagged_count,
+                'alerts_fired':      alert_count,
+                'flagged_percentage': flagged_count / analyzed_count * 100 if analyzed_count > 0 else 0,
+                'alert_percentage':   alert_count  / analyzed_count * 100 if analyzed_count > 0 else 0,
+            },
+            'average_signals': avg_signals,
+            'frame_results':   results,
+        }
+
+        json_path = save_result_to_json(response, 'video')
+        response['saved_to'] = json_path
+        return JSONResponse(content=normalize_json_value(response))
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Video analysis failed: {str(e)}")
+    finally:
+        if temp_file and Path(temp_file.name).exists():
+            Path(temp_file.name).unlink(missing_ok=True)
 
 
 @app.get("/results")
