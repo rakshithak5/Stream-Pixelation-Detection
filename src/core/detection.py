@@ -190,6 +190,126 @@ def compute_block_variance_score(frame: np.ndarray, block_size: int = 8) -> floa
     return float(artifact_blocks / total_blocks) if total_blocks > 0 else 0.0
 
 
+def compute_frozen_block_score(frame: np.ndarray, prev_frame: np.ndarray, block_size: int = 8) -> float:
+    """
+    Detects frozen/repeated blocks — a transmission error artifact where decoder
+    reuses blocks from the previous frame due to packet loss or bitstream corruption.
+
+    Real stream glitches: 20–65% of blocks are frozen (identical to prev frame).
+    Normal motion video: < 5% of blocks are frozen (only truly static regions).
+
+    This is distinct from macroblocking/pixelation — the block content is valid
+    but temporally wrong (copied from wrong frame).
+
+    Args:
+        frame:      Current frame (BGR)
+        prev_frame: Previous frame (BGR)
+        block_size: Block size in pixels (default 8)
+
+    Returns:
+        Fraction of frozen blocks [0, 1]
+    """
+    if prev_frame is None:
+        return 0.0
+
+    luma_curr = _to_luma(frame)
+    luma_prev = _to_luma(prev_frame)
+
+    if luma_curr.shape != luma_prev.shape:
+        return 0.0
+
+    h, w = luma_curr.shape
+    frozen = 0
+    total  = 0
+
+    for by in range(0, h - block_size, block_size):
+        for bx in range(0, w - block_size, block_size):
+            bc = luma_curr[by:by + block_size, bx:bx + block_size]
+            bp = luma_prev[by:by + block_size, bx:bx + block_size]
+            total += 1
+            # Mean absolute difference < 1.0 luma unit = effectively identical
+            if float(np.mean(np.abs(bc.astype(np.float32) - bp.astype(np.float32)))) < 1.0:
+                frozen += 1
+
+    return float(frozen / total) if total > 0 else 0.0
+
+
+def compute_block_boundary_density(frame: np.ndarray, block_size: int = 8, threshold: float = 5.0) -> float:
+    """
+    Fraction of block-aligned boundaries (at 8px intervals) that have strong
+    paired gradient energy on both sides.
+
+    Real macroblocking: nearly ALL 8px boundaries are strong → density ≈ 0.5–1.0
+    Color bars:         only bar-edge boundaries are strong  → density ≈ 0.05–0.15
+    Smooth stripes:     all boundaries strong BUT block_var=0 (caught by block gate)
+    Clean images:       very few strong boundaries           → density ≈ 0.0–0.05
+
+    Returns: fraction [0, 1]
+    """
+    luma = _to_luma(frame)
+    h, w = luma.shape
+    sobelx = cv2.Sobel(luma, cv2.CV_64F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(luma, cv2.CV_64F, 0, 1, ksize=3)
+
+    strong = 0
+    total  = 0
+
+    # Vertical boundaries (columns at x = block_size, 2*block_size, ...)
+    for x in range(block_size, w - block_size, block_size):
+        paired = float(np.minimum(np.abs(sobelx[:, x - 1]), np.abs(sobelx[:, x])).mean())
+        total += 1
+        if paired > threshold:
+            strong += 1
+
+    # Horizontal boundaries (rows at y = block_size, 2*block_size, ...)
+    for y in range(block_size, h - block_size, block_size):
+        paired = float(np.minimum(np.abs(sobely[y - 1, :]), np.abs(sobely[y, :])).mean())
+        total += 1
+        if paired > threshold:
+            strong += 1
+
+    return float(strong / total) if total > 0 else 0.0
+
+
+def compute_artifact_col_coverage(frame: np.ndarray, block_size: int = 8) -> float:
+    """
+    Fraction of block-column positions that contain at least one artifact block
+    (flat interior + strong boundary + no interior gradients).
+
+    Real macroblocking: artifacts spread across many columns → coverage ≥ 0.35
+    Color bars:         artifacts only at bar-edge columns   → coverage ≈ 0.17
+    Clean images:       no artifact blocks                   → coverage = 0.0
+
+    This is the key discriminator for the BRISQUE_blockvar path, which can fire
+    on color bars (high BRISQUE + non-zero block_var) but should not.
+
+    Returns: fraction [0, 1]
+    """
+    luma = _to_luma(frame)
+    h, w = luma.shape
+    sobelx = cv2.Sobel(luma, cv2.CV_32F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(luma, cv2.CV_32F, 0, 1, ksize=3)
+    grad   = np.sqrt(sobelx ** 2 + sobely ** 2)
+
+    artifact_cols = set()
+    total_cols    = w // block_size
+
+    for by in range(0, h - block_size, block_size):
+        for bx in range(0, w - block_size, block_size):
+            bluma = luma[by:by + block_size, bx:bx + block_size]
+            bgrad = grad[by:by + block_size, bx:bx + block_size]
+            boundary_grad = np.concatenate([
+                bgrad[0, :], bgrad[-1, :], bgrad[:, 0], bgrad[:, -1]
+            ])
+            if (float(np.std(bluma[1:-1, 1:-1])) < 3.0 and
+                    float(np.mean(boundary_grad)) > 15.0 and
+                    float(grad[by + 1:by + block_size - 1,
+                               bx + 1:bx + block_size - 1].mean()) < 5.0):
+                artifact_cols.add(bx // block_size)
+
+    return float(len(artifact_cols) / total_cols) if total_cols > 0 else 0.0
+
+
 def compute_brisque_score(frame: np.ndarray) -> float:
     """
     Gradient-ratio quality metric on luma channel.
